@@ -14,36 +14,46 @@ UNMOCKED_ERROR = {'ok': False, 'error': 'not_authed'}
 
 
 class TestClass(TestCase):
-    def setUp(self):
-        original_session_get = requests.Session.get
-        original_session_post = requests.Session.post
-        original_get = requests.get
-        original_post = requests.post
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.original_method_storage = {
+            'original_session_get': requests.Session.get,
+            'original_session_post': requests.Session.post,
+            'original_get': requests.get,
+            'original_post': requests.post,
+        }
 
         def mocked_get(url, **kwargs):
             if any(api in url for api in ['im.', 'mpim.', 'channels.', 'groups.']):
                 return Mock(content=UNKNOWN_METHOD_ERROR_STRING)
-            return original_get(url, **kwargs)
+            return cls.original_method_storage['original_get'](url, **kwargs)
 
         def mocked_post(url, **kwargs):
             if any(api in url for api in ['im.', 'mpim.', 'channels.', 'groups.']):
                 return Mock(content=UNKNOWN_METHOD_ERROR_STRING)
-            return original_post(url, **kwargs)
+            return cls.original_method_storage['original_post'](url, **kwargs)
 
         def mocked_session_get(session_self, url, **kwargs):
             if any(api in url for api in ['im.', 'mpim.', 'channels.', 'groups.']):
                 return Mock(content=UNKNOWN_METHOD_ERROR_STRING)
-            return original_session_get(session_self, url, **kwargs)
+            return cls.original_method_storage['original_session_get'](session_self, url, **kwargs)
 
         def mocked_session_post(session_self, url, **kwargs):
             if any(api in url for api in ['im.', 'mpim.', 'channels.', 'groups.']):
                 return Mock(content=UNKNOWN_METHOD_ERROR_STRING)
-            return original_session_post(session_self, url, **kwargs)
+            return cls.original_method_storage['original_session_post'](session_self, url, **kwargs)
 
         requests.Session.get = mocked_session_get
         requests.Session.post = mocked_session_post
         requests.get = mocked_get
         requests.post = mocked_post
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        requests.Session.get = cls.original_method_storage['original_session_get']
+        requests.Session.post = cls.original_method_storage['original_session_post']
+        requests.get = cls.original_method_storage['original_get']
+        requests.post = cls.original_method_storage['original_post']
 
     def test_legit_api(self):
         response = requests.post('https://www.slack.com/api/conversations.create')
