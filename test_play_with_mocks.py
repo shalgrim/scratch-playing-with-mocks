@@ -55,21 +55,39 @@ class TestClass(TestCase):
         requests.get = cls.original_method_storage['original_get']
         requests.post = cls.original_method_storage['original_post']
 
-    def test_legit_api(self):
+    def test_legit_api_get(self):
+        response = requests.get('https://www.slack.com/api/conversations.list')
+        self.assertEqual(json.loads(response.content), UNMOCKED_ERROR)
+
+    def test_legit_api_post(self):
         response = requests.post('https://www.slack.com/api/conversations.create')
         self.assertEqual(json.loads(response.content), UNMOCKED_ERROR)
 
-    def test_bad_api(self):
+    def test_bad_api_get(self):
         response = requests.get('https://www.slack.com/api/channels.list')
         self.assertEqual(json.loads(response.content), UNKNOWN_METHOD_ERROR)
 
-    def test_legit_api_session(self):
+    def test_bad_api_post(self):
+        response = requests.post('https://www.slack.com/api/channels.invite')
+        self.assertEqual(json.loads(response.content), UNKNOWN_METHOD_ERROR)
+
+    def test_legit_api_session_get(self):
+        s = requests.Session()
+        response = s.get('https://www.slack.com/api/conversations.list')
+        self.assertEqual(json.loads(response.content), UNMOCKED_ERROR)
+
+    def test_legit_api_session_post(self):
         s = requests.Session()
         response = s.post('https://www.slack.com/api/conversations.create')
         self.assertEqual(json.loads(response.content), UNMOCKED_ERROR)
 
-    def test_bad_api_session(self):
+    def test_bad_api_session_get(self):
         s = requests.Session()
         response = s.get('https://www.slack.com/api/channels.list')
+        self.assertEqual(json.loads(response.content), UNKNOWN_METHOD_ERROR)
+
+    def test_bad_api_session_post(self):
+        s = requests.Session()
+        response = s.post('https://www.slack.com/api/channels.invite')
         self.assertEqual(json.loads(response.content), UNKNOWN_METHOD_ERROR)
 
